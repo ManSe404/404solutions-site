@@ -1,0 +1,58 @@
+---
+// Phone only: the ask stays one thumb away while the page scrolls, and the
+// bee opens Scout (ScoutChat.astro listens for [data-scout-open]).
+import Bee from './Bee.astro';
+import { mascot } from '../data/faq';
+import { withBase } from '../lib/url';
+---
+
+<div class="sticky-cta">
+  <a class="btn btn-solid sticky-main" href={withBase('/contact/')}>Start a project <span aria-hidden="true">→</span></a>
+  <button
+    class="btn btn-ghost sticky-scout"
+    type="button"
+    aria-label={`Ask ${mascot.name}`}
+    aria-controls="scout-panel"
+    aria-expanded="false"
+    data-scout-open
+  >
+    <Bee size={34} />
+  </button>
+</div>
+
+<style>
+  .sticky-cta {
+    display: none;
+  }
+
+  @media (max-width: 640px) {
+    .sticky-cta {
+      position: fixed;
+      inset: auto 0 0;
+      z-index: 20;
+      display: flex;
+      gap: 0.6rem;
+      padding: 0.75rem 1rem calc(1rem + env(safe-area-inset-bottom));
+      background: rgba(var(--bg-rgb), 0.92);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border-strong);
+    }
+
+    .sticky-main {
+      flex: 1 1 auto;
+      min-height: 48px;
+      font-size: 0.875rem;
+    }
+
+    .sticky-scout {
+      flex: 0 0 48px;
+      min-height: 48px;
+      padding: 0;
+    }
+
+    /* The bottom sheet takes the bar's place while it is open. */
+    :global(.scout-open) .sticky-cta {
+      display: none;
+    }
+  }
+</style>

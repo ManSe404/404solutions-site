@@ -1,0 +1,207 @@
+---
+// The contact box: the main content of /contact/. E-mail and LinkedIn are the
+// routes; there is no form, because the site is static and sends nothing.
+// What to send is the same three things the rest of the site asks for.
+import { company } from '../data/company';
+import { mascot } from '../data/faq';
+
+const { email, links, location } = company;
+
+const toSend = [
+  { title: 'The problem', text: 'What you need, and what happens today without it.' },
+  { title: 'What you already have', text: 'Systems, data, a team: what exists, so we build only the missing part.' },
+  { title: 'The deadline', text: 'When it has to run, and anything fixed around it.' },
+];
+---
+
+<section id="contact" class="wrap contact-page" aria-labelledby="contact-title">
+  <div class="contact">
+    <p class="eyebrow">Start a project</p>
+    <h1 id="contact-title">Tell us what's missing.</h1>
+    <p class="contact-lede">A few lines on the problem, what you already have and the deadline are enough to start.</p>
+    <p class="contact-visit"><strong>Rather show than write?</strong> Invite us over: we come to you, on site or on a call, look at what you have and tell you what's missing.</p>
+    <div class="contact-actions">
+      {email && (
+        <a class="btn btn-solid" href={`mailto:${email}`}>{email} <span aria-hidden="true">→</span></a>
+      )}
+      <a class={`btn ${email ? 'btn-ghost' : 'btn-solid'}`} href={links.linkedin}>
+        Message on LinkedIn <span aria-hidden="true">↗</span>
+      </a>
+    </div>
+    <p class="mono contact-where">{location} · delivering across Europe &amp; the US</p>
+  </div>
+
+  <div class="contact-more">
+    <section class="send" aria-labelledby="send-title">
+      <h2 id="send-title" class="eyebrow">What to send</h2>
+      <ol class="send-list">
+        {toSend.map((item, i) => (
+          <li>
+            <span class="mono send-no">{String(i + 1).padStart(2, '0')}</span>
+            <div>
+              <strong>{item.title}</strong>
+              <p>{item.text}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <aside class="ask" aria-label={`Ask ${mascot.name}`}>
+      <p><strong>Not ready to write yet?</strong> {mascot.name} answers common questions — what we build, how an engagement works, what it costs — from a fixed list, right here on the page.</p>
+      <button class="btn btn-ghost" type="button" aria-controls="scout-panel" aria-expanded="false" data-scout-open>
+        Ask {mascot.name}
+      </button>
+    </aside>
+  </div>
+</section>
+
+<style>
+  .contact-page {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1.5rem, 4vw, 2.5rem);
+    padding-block: clamp(2.5rem, 7vh, 4.5rem) var(--section-y);
+  }
+
+  .contact-visit {
+    max-width: 62ch;
+    padding: 0.9rem 1.1rem;
+    border: 1px dashed rgba(var(--bio-rgb), 0.42);
+    border-radius: var(--radius);
+    background: rgba(var(--bio-rgb), 0.04);
+    color: var(--text-dim);
+  }
+
+  .contact-visit strong {
+    color: var(--text);
+  }
+
+  .contact {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.1rem;
+    padding: clamp(1.6rem, 5vw, 4rem);
+    border: 1px solid rgba(var(--bio-rgb), 0.42);
+    border-radius: var(--radius);
+    background: rgba(var(--bio-rgb), 0.05);
+  }
+
+  h1 {
+    font-size: clamp(2.2rem, 5vw, 3.6rem);
+    font-weight: 700;
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+  }
+
+  .contact-lede {
+    max-width: 52ch;
+    font-size: 1.06rem;
+    color: var(--text-dim);
+  }
+
+  .contact-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    margin-top: 0.4rem;
+  }
+
+  .contact-where {
+    margin-top: 0.4rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.03em;
+    color: var(--text-dim);
+  }
+
+  .contact-more {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: clamp(1.25rem, 3vw, 2rem);
+    align-items: start;
+  }
+
+  .send h2 {
+    margin-bottom: 1rem;
+    font-weight: 400;
+    line-height: 1.65;
+  }
+
+  .send-list {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--border);
+  }
+
+  .send-list li {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .send-no {
+    flex: 0 0 1.75rem;
+    padding-top: 0.2rem;
+    font-size: 0.75rem;
+    color: var(--bio);
+  }
+
+  .send-list strong {
+    display: block;
+    font-weight: 600;
+  }
+
+  .send-list p {
+    font-size: 0.94rem;
+    color: var(--text-dim);
+  }
+
+  .ask {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  .ask p {
+    color: var(--text-dim);
+    font-size: 0.97rem;
+  }
+
+  .ask strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  @media (max-width: 760px) {
+    .contact-more {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .contact-lede {
+      font-size: 0.97rem;
+    }
+
+    .contact-actions {
+      flex-direction: column;
+      align-self: stretch;
+    }
+
+    .contact-actions .btn,
+    .ask .btn {
+      min-height: 50px;
+    }
+
+    .ask .btn {
+      align-self: stretch;
+    }
+  }
+</style>

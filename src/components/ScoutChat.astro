@@ -1,0 +1,371 @@
+---
+// Scout, the question bot. Not AI: src/lib/faq.ts matches the question
+// against the fixed list in src/data/faq.ts, in the browser. Nothing typed is
+// sent or stored. Any element with [data-scout-open] opens the panel; the
+// floating launcher here is for desktop, the phone bar has its own button.
+import Bee from './Bee.astro';
+import { buildFaq, defaultSuggestions, mascot } from '../data/faq';
+import { nextSuggestions } from '../lib/faq';
+import { featured, projects } from '../lib/projects';
+import { fields, toolUsage } from '../lib/dashboard';
+import { withBase } from '../lib/url';
+
+// Built here, where the project collection exists, and handed to the browser
+// script as JSON. Links are page paths with the base, so they work from every
+// page.
+const studies = (await projects()).map((project) => project.data);
+const faq = buildFaq({
+  services: withBase('/services/'),
+  process: withBase('/how-we-work/'),
+  about: withBase('/about/'),
+  contact: withBase('/contact/'),
+  projectTitles: studies.map((project) => project.title),
+  featuredTitles: (await featured()).map((study) => study.data.title),
+  fields: fields(studies).map(({ name, count }) => ({ name, count })),
+  tools: toolUsage(studies).map((tool) => tool.name),
+});
+const initial = nextSuggestions(faq, defaultSuggestions, null);
+---
+
+<button
+  class="scout-launcher"
+  type="button"
+  aria-label={`Ask ${mascot.name}`}
+  aria-controls="scout-panel"
+  aria-expanded="false"
+  data-scout-open
+>
+  <Bee size={38} />
+  <span class="scout-launcher-label mono">Ask {mascot.name}</span>
+</button>
+
+<script is:inline type="application/json" id="scout-faq" set:html={JSON.stringify(faq).replace(/</g, '\\u003c')} />
+
+<section class="scout-panel" id="scout-panel" aria-labelledby="scout-title" hidden data-scout-panel>
+  <header class="scout-head">
+    <Bee size={30} />
+    <div class="scout-head-text">
+      <h2 id="scout-title">{mascot.name}</h2>
+      <p class="mono">{mascot.tagline}</p>
+    </div>
+    <button class="scout-close" type="button" aria-label="Close" data-scout-close>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+        <path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path>
+      </svg>
+    </button>
+  </header>
+
+  <ol class="scout-log" aria-live="polite" data-scout-log>
+    <li class="msg msg-bot">{mascot.greeting}</li>
+  </ol>
+
+  <div class="scout-suggestions" data-scout-suggestions>
+    {initial.map((entry) => (
+      <button class="chip scout-chip" type="button" data-question={entry.question}>{entry.question}</button>
+    ))}
+  </div>
+
+  <form class="scout-form" data-scout-form>
+    <label class="visually-hidden" for="scout-input">Ask a question</label>
+    <input id="scout-input" name="question" type="text" autocomplete="off" maxlength="200" placeholder="Type a question…" />
+    <button class="btn" type="submit">Ask</button>
+  </form>
+</section>
+
+<script>
+  import { defaultSuggestions, fallback } from '../data/faq';
+  import { match, nextSuggestions, type FaqEntry, type FaqLink } from '../lib/faq';
+
+  const faq: FaqEntry[] = JSON.parse(document.getElementById('scout-faq')?.textContent ?? '[]');
+
+  const panel = document.querySelector<HTMLElement>('[data-scout-panel]');
+  const log = document.querySelector<HTMLOListElement>('[data-scout-log]');
+  const form = document.querySelector<HTMLFormElement>('[data-scout-form]');
+  const input = document.querySelector<HTMLInputElement>('#scout-input');
+  const suggestions = document.querySelector<HTMLElement>('[data-scout-suggestions]');
+  const openers = document.querySelectorAll<HTMLElement>('[data-scout-open]');
+  const closer = document.querySelector<HTMLButtonElement>('[data-scout-close]');
+
+  if (panel && log && form && input && suggestions) {
+    let lastOpener: HTMLElement | null = null;
+
+    const setOpen = (open: boolean, opener?: HTMLElement) => {
+      panel.hidden = !open;
+      document.documentElement.classList.toggle('scout-open', open);
+      openers.forEach((button) => button.setAttribute('aria-expanded', String(open)));
+      if (open) {
+        lastOpener = opener ?? null;
+        input.focus();
+      } else {
+        lastOpener?.focus();
+      }
+    };
+
+    const addMessage = (who: 'user' | 'bot', text: string, links: FaqLink[] = []) => {
+      const item = document.createElement('li');
+      item.className = `msg msg-${who}`;
+      item.textContent = text;
+      if (links.length) {
+        const row = document.createElement('span');
+        row.className = 'msg-links';
+        for (const link of links) {
+          const a = document.createElement('a');
+          a.href = link.href;
+          a.textContent = link.label;
+          if (link.href.includes('#')) a.addEventListener('click', () => setOpen(false));
+          row.append(a);
+        }
+        item.append(row);
+      }
+      log.append(item);
+      log.scrollTop = log.scrollHeight;
+    };
+
+    const showSuggestions = (questions: string[]) => {
+      suggestions.replaceChildren(
+        ...questions.map((question) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'chip scout-chip';
+          button.dataset.question = question;
+          button.textContent = question;
+          return button;
+        }),
+      );
+    };
+
+    const ask = (question: string) => {
+      const text = question.trim();
+      if (!text) return;
+      addMessage('user', text);
+      const { entry } = match(text, faq);
+      if (entry) addMessage('bot', entry.answer, entry.links);
+      else addMessage('bot', fallback.answer, fallback.links);
+      showSuggestions(nextSuggestions(faq, defaultSuggestions, entry).map((next) => next.question));
+    };
+
+    openers.forEach((button) =>
+      button.addEventListener('click', () => setOpen(panel.hidden, button)),
+    );
+    closer?.addEventListener('click', () => setOpen(false));
+
+    suggestions.addEventListener('click', (event) => {
+      const chip = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-question]');
+      if (chip?.dataset.question) ask(chip.dataset.question);
+    });
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      ask(input.value);
+      input.value = '';
+    });
+
+    panel.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') setOpen(false);
+    });
+  }
+</script>
+
+<style>
+  .scout-launcher {
+    position: fixed;
+    right: 1.5rem;
+    bottom: 1.5rem;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 1rem 0.4rem 0.45rem;
+    border: 1px solid rgba(var(--bio-rgb), 0.55);
+    border-radius: 999px;
+    background: var(--bg-raised);
+    box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.7);
+    transition: border-color 0.3s var(--ease), transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+  }
+
+  .scout-launcher:hover {
+    border-color: var(--bio);
+    transform: translateY(-2px);
+    box-shadow: 0 0 26px -8px var(--glow-bio);
+  }
+
+  .scout-launcher-label {
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    color: var(--bio);
+  }
+
+  :global(.scout-open) .scout-launcher {
+    display: none;
+  }
+
+  .scout-panel {
+    position: fixed;
+    right: 1.5rem;
+    bottom: 1.5rem;
+    z-index: 40;
+    width: min(380px, calc(100vw - 2rem));
+    height: min(540px, calc(100vh - 3rem));
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-raised);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.8);
+    overflow: hidden;
+  }
+
+  .scout-panel[hidden] {
+    display: none;
+  }
+
+  .scout-head {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.85rem 0.85rem 0.85rem 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .scout-head-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .scout-head h2 {
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+  }
+
+  .scout-head p {
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    color: var(--text-dim);
+  }
+
+  .scout-close {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    color: var(--text-dim);
+  }
+
+  .scout-close:hover {
+    color: var(--text);
+    background: var(--surface-hover);
+  }
+
+  .scout-log {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 1rem;
+  }
+
+  .scout-log :global(.msg) {
+    max-width: 88%;
+    padding: 0.6rem 0.8rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .scout-log :global(.msg-bot) {
+    align-self: flex-start;
+    background: var(--surface-hover);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+  }
+
+  .scout-log :global(.msg-user) {
+    align-self: flex-end;
+    background: rgba(var(--bio-rgb), 0.12);
+    border: 1px solid rgba(var(--bio-rgb), 0.3);
+    border-bottom-right-radius: 4px;
+  }
+
+  .scout-log :global(.msg-links) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.9rem;
+    margin-top: 0.45rem;
+  }
+
+  .scout-log :global(.msg-links a) {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--bio);
+    border-bottom: 1px solid rgba(var(--bio-rgb), 0.35);
+  }
+
+  .scout-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0 1rem 0.75rem;
+  }
+
+  .scout-suggestions :global(.scout-chip) {
+    min-height: 32px;
+    cursor: pointer;
+    color: var(--bio);
+    border-color: rgba(var(--bio-rgb), 0.28);
+    background: rgba(var(--bio-rgb), 0.06);
+    white-space: normal;
+    text-align: left;
+  }
+
+  .scout-suggestions :global(.scout-chip:hover) {
+    background: rgba(var(--bio-rgb), 0.14);
+  }
+
+  .scout-form {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .scout-form input {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0 0.8rem;
+    font: inherit;
+    font-size: 0.9rem;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+  }
+
+  .scout-form input::placeholder {
+    color: var(--text-faint);
+  }
+
+  .scout-form input:focus-visible {
+    outline: 2px solid var(--bio);
+    outline-offset: 1px;
+  }
+
+  /* Phone: the launcher lives in the sticky bar; the panel is a bottom sheet. */
+  @media (max-width: 640px) {
+    .scout-launcher {
+      display: none;
+    }
+
+    .scout-panel {
+      inset: auto 0 0;
+      width: 100%;
+      height: min(78vh, 600px);
+      border-radius: var(--radius) var(--radius) 0 0;
+      border-bottom: 0;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  }
+</style>

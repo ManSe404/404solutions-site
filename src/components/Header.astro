@@ -1,0 +1,196 @@
+---
+import HiveMark from './HiveMark.astro';
+import { withBase } from '../lib/url';
+
+// The site's pages, Home first (Stefan, 2026-11-16: "just in case", beside the
+// logo link). Each link is marked as the current page while you are on it;
+// Home only on the home page itself.
+const home = withBase('/');
+const links: { label: string; href: string; page: boolean; exact?: boolean }[] = [
+  { label: 'Home', href: home, page: true, exact: true },
+  { label: 'Services', href: withBase('/services/'), page: true },
+  { label: 'How we engage', href: withBase('/how-we-work/'), page: true },
+  { label: 'About', href: withBase('/about/'), page: true },
+  { label: 'Contact', href: withBase('/contact/'), page: true },
+];
+
+const trim = (path: string) => path.replace(/\/+$/, '');
+const here = trim(Astro.url.pathname);
+const isCurrent = (link: (typeof links)[number]) =>
+  Boolean(link.page) && (here === trim(link.href) || (!link.exact && here.startsWith(`${trim(link.href)}/`)));
+---
+
+<header class="header">
+  <div class="header-inner wrap">
+    <a class="brand" href={home} aria-label="404 Solutions, home">
+      <HiveMark size={34} stroke={1.5} />
+      <span class="brand-name"><span class="mono brand-code">404</span> Solutions</span>
+    </a>
+
+    <button
+      class="menu-toggle"
+      type="button"
+      aria-label="Open menu"
+      aria-expanded="false"
+      aria-controls="site-menu"
+      data-menu-toggle
+    >
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+        <path d="M3 6h14M3 10h14M3 14h9"></path>
+      </svg>
+    </button>
+
+    <div class="menu" id="site-menu" data-menu>
+      <nav aria-label="Main">
+        <ul class="menu-links">
+          {links.map((link) => (
+            <li>
+              <a href={link.href} aria-current={isCurrent(link) ? 'page' : undefined}>{link.label}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <a class="btn menu-cta" href={withBase('/contact/')}>Start a project <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</header>
+
+<script>
+  const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+  const menu = document.querySelector<HTMLElement>('[data-menu]');
+
+  if (toggle && menu) {
+    const setOpen = (open: boolean) => {
+      menu.classList.toggle('is-open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    };
+
+    toggle.addEventListener('click', () => setOpen(!menu.classList.contains('is-open')));
+
+    // Following a link closes the phone menu.
+    menu.addEventListener('click', (event) => {
+      if ((event.target as HTMLElement).closest('a')) setOpen(false);
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && menu.classList.contains('is-open')) {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+  }
+</script>
+
+<style>
+  .header {
+    position: relative;
+    z-index: 10;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.9rem 2rem;
+    padding-block: 1rem;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-height: 44px;
+    font-size: 1.19rem;
+    line-height: 1;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .brand-code {
+    font-weight: 500;
+    color: var(--bio);
+    letter-spacing: 0;
+  }
+
+  .menu {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .menu-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.75rem;
+    font-size: 0.94rem;
+  }
+
+  .menu-links a {
+    display: inline-block;
+    padding-block: 0.6rem;
+    color: var(--text-dim);
+    transition: color 0.25s var(--ease);
+  }
+
+  .menu-links a:hover,
+  .menu-links a[aria-current='page'] {
+    color: var(--text);
+  }
+
+  .menu-links a[aria-current='page'] {
+    box-shadow: inset 0 -1px 0 var(--bio);
+  }
+
+  .menu-toggle {
+    display: none;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+  }
+
+  /* Phone: logo and a menu button; the links open in a panel below. */
+  @media (max-width: 860px) {
+    .header-inner {
+      padding-block: 0.75rem;
+    }
+
+    .brand {
+      font-size: 1.06rem;
+    }
+
+    .menu-toggle {
+      display: flex;
+    }
+
+    .menu {
+      display: none;
+      flex-basis: 100%;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+      padding-block: 0.5rem 1rem;
+    }
+
+    .menu.is-open {
+      display: flex;
+    }
+
+    .menu-links {
+      flex-direction: column;
+      gap: 0;
+      font-size: 1.05rem;
+    }
+
+    .menu-links a {
+      display: block;
+      padding-block: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+  }
+</style>

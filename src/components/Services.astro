@@ -1,0 +1,100 @@
+---
+// The Services page, which is also the work: what we built, end to end, as
+// one honeycomb of projects with the dashed "Not on the list?" cell last
+// (Stefan, 2026-11-16: the same hive as the portfolio's projects, the
+// descriptions as the portfolio has them; ADR 0007). Like the portfolio's
+// projects page, the cells of one field sit together so the colours cluster:
+// AI first, then data and analytics, then the rest; by order inside each.
+import ProjectHive from './hive/ProjectHive.astro';
+import { projects } from '../lib/projects';
+
+const FIELDS = [
+  ['Generative AI', 'Agentic AI', 'Conversational AI', 'Computer Vision'],
+  ['Data Engineering', 'Machine Learning'],
+];
+const fieldRank = (category: string) => {
+  const i = FIELDS.findIndex((field) => field.includes(category));
+  return i === -1 ? FIELDS.length : i;
+};
+
+const all = await projects();
+const ordered = [...all].sort(
+  (a, b) => fieldRank(a.data.category) - fieldRank(b.data.category) || a.data.order - b.data.order,
+);
+---
+
+<section class="section wrap services-page" aria-labelledby="services-title">
+  <div class="section-head">
+    <p class="eyebrow">Services</p>
+    <h1 id="services-title">What we built, end to end.</h1>
+    <p>
+      {all.length} projects, each built end to end. Pick a cell to read what it is, what it achieved, the role and
+      the tools. Clients stay unnamed.
+    </p>
+  </div>
+
+  <p class="legend mono">
+    <span class="dot dot-ai"></span>AI systems <span class="dot dot-data"></span>Data &amp; analytics
+    <span class="dot dot-sw"></span>Software <span class="dot dot-missing"></span>Yours to name
+  </p>
+
+  <ProjectHive id="work" projects={ordered} />
+</section>
+
+<style>
+  .services-page {
+    padding-top: clamp(3rem, 8vh, 5.5rem);
+  }
+
+  /* The title keeps one line on desktop; the paragraph under it keeps the reading width. */
+  .section-head {
+    max-width: none;
+  }
+
+  .section-head p:not(.eyebrow) {
+    max-width: 62ch;
+  }
+
+  h1 {
+    font-size: clamp(2.3rem, 5vw, 3.6rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  .legend {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.2rem;
+    margin: 0 0 1.2rem;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  .dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 0.4rem;
+    border-radius: 50%;
+    vertical-align: middle;
+  }
+
+  .dot-ai {
+    background: var(--ai);
+  }
+
+  .dot-data {
+    background: var(--bio);
+  }
+
+  .dot-sw {
+    background: var(--border-strong);
+    border: 1px solid var(--text-dim);
+  }
+
+  .dot-missing {
+    border: 1px dashed var(--bio);
+  }
+</style>

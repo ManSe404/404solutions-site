@@ -1,0 +1,27 @@
+{
+  "_about": "Edits sync-projects.mjs applies to the copied frontmatter. `replace`: whole fields swapped for text that names no client and identifies no project (ADR 0008); `sha256` is the hash of the source field it replaces, so a change in the portfolio is reported, and the source text is never kept here. `phrases`: exact replacements for the company voice (\"we\" where the portfolio says \"I\"). Keyed by project id.",
+  "agentic-insights-platform": {
+    "replace": {
+      "summary": {
+        "sha256": "5071d73958e97ea66be33a15b5ad244d00f2b4347a8d57e2704ed7bbc1f75e98",
+        "yaml": "summary: Document-heavy work split across many manual jobs, now one agent platform — briefings ready sooner, summaries faster, the whole process in one place."
+      },
+      "impact": {
+        "sha256": "5a4083c60afc5f522d7b536851557dd7b849edbe0a6b7ce021776ecae73bf9e6",
+        "yaml": "impact:\n  - Preparation done by agents before anyone asks\n  - Translation that keeps each document's layout\n  - Spoken summaries, and minutes drawn from speech-to-text\n  - Each topic read through expert personas — risks, sector impact, benchmarks and recommendations"
+      },
+      "metrics": {
+        "sha256": "3d1fd7f20626709f16043cd32b3261c87bc6b60647528d032b36695c245ccd55",
+        "yaml": "metrics:\n  - label: Architecture\n    value: Graph-orchestrated agents\n  - label: Languages\n    value: Multilingual\n  - label: Scope\n    value: The whole process"
+      }
+    }
+  },
+  "multilingual-qa-chatbot": {
+    "phrases": [
+      {
+        "from": "by the team I led",
+        "to": "by the team we led"
+      }
+    ]
+  }
+}

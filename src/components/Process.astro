@@ -1,0 +1,123 @@
+---
+import { steps } from '../data/services';
+import { company } from '../data/company';
+
+interface Props {
+  /** Render as the main content of its own page (/how-we-work/): h1 and page spacing. */
+  page?: boolean;
+}
+
+const { page = false } = Astro.props;
+const Heading = page ? 'h1' : 'h2';
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+
+<section id="process" class:list={['section', 'wrap', { 'as-page': page }]} aria-labelledby="process-title">
+  <div class="section-head">
+    <p class="eyebrow">How we engage</p>
+    <Heading id="process-title" class="process-title">Discover, build, ship, run.</Heading>
+    <p>From the problem statement to a system running in your cloud, and kept running after launch.</p>
+  </div>
+
+  <ol class="steps">
+    {steps.map((step, index) => (
+      <li class="step">
+        <span class="mono step-label">{pad(index + 1)} · {step.label}</span>
+        <h3>{step.title}</h3>
+        <p>{step.summary}</p>
+      </li>
+    ))}
+  </ol>
+
+  {company.engagementModel && <p class="mono model">Engagement model: {company.engagementModel}</p>}
+</section>
+
+<style>
+  /* As a page: the heading is the page title, so it opens the page instead of a home section. */
+  .as-page {
+    padding-top: clamp(3rem, 8vh, 5.5rem);
+  }
+
+  .as-page .process-title {
+    font-size: clamp(2.3rem, 5vw, 3.6rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+    gap: 1.1rem;
+  }
+
+  .step {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border-strong);
+  }
+
+  .step-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    color: var(--bio);
+  }
+
+  h3 {
+    font-size: 1.25rem;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  .step p {
+    font-size: 0.94rem;
+    color: var(--text-dim);
+  }
+
+  .model {
+    margin-top: 2rem;
+    font-size: 0.81rem;
+    letter-spacing: 0.03em;
+    color: var(--text-faint);
+  }
+
+  /* Phone: a vertical timeline, the first step lit. */
+  @media (max-width: 640px) {
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      padding-left: 1.4rem;
+      border-left: 1px solid var(--border-strong);
+    }
+
+    .step {
+      position: relative;
+      gap: 0.25rem;
+      padding-top: 0;
+      border-top: 0;
+    }
+
+    .step::before {
+      content: '';
+      position: absolute;
+      left: calc(-1.4rem - 6px);
+      top: 0.3rem;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      border: 1px solid var(--bio);
+      background: var(--bg);
+    }
+
+    .step:first-child::before {
+      background: var(--bio);
+      box-shadow: 0 0 8px var(--glow-bio);
+    }
+
+    h3 {
+      font-size: 1.05rem;
+    }
+  }
+</style>

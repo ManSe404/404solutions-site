@@ -1,0 +1,497 @@
+---
+// The hero picture: a team as nine skill cells around one empty
+// cell (404 AI), and the honey cell (200 AI) moving in to fill it.
+//
+// Interactive when JavaScript runs: drag the 200 cell into the gap, or tap it,
+// or focus it and press Enter or Space; or click the 404 gap to invite it, and
+// the 200 cell glides over by itself (Stefan, 2026-11-16). The dotted trail
+// stays attached to the 200 cell wherever it is dragged. Once it lands the gap
+// is filled, the comb lights up from the centre and the caption reports 200.
+// Without JavaScript the figure is the static drawing.
+const cells = [
+  { x: 156.6, y: 23, label: 'Design' },
+  { x: 243.2, y: 23, label: 'Frontend' },
+  { x: 329.8, y: 23, label: 'Brand' },
+  { x: 113.3, y: 98, label: 'PM' },
+  { x: 199.9, y: 98, label: 'Backend' },
+  { x: 373.1, y: 98, label: 'Mobile' },
+  { x: 156.6, y: 173, label: 'QA' },
+  { x: 243.2, y: 173, label: 'DevOps' },
+  { x: 329.8, y: 173, label: 'CMS' },
+];
+
+// Pointy-top hexagon with its top vertex at (x, y): 94 tall, 81.4 wide, so
+// its centre is (x, y + 47).
+const hex = (x: number, y: number) =>
+  [
+    [x, y],
+    [x + 40.7, y + 23.5],
+    [x + 40.7, y + 70.5],
+    [x, y + 94],
+    [x - 40.7, y + 70.5],
+    [x - 40.7, y + 23.5],
+  ]
+    .map(([px, py]) => `${px.toFixed(1)},${py.toFixed(1)}`)
+    .join(' ');
+
+// The gap (404 cell) and the mover (200 cell), by top vertex. The script reads
+// the centres from the data attributes, so geometry lives in one place.
+const gap = { x: 286.5, y: 98 };
+const mover = { x: 503, y: 3 };
+
+// The wave: each skill cell lights up later the farther its centre is from
+// the gap's centre.
+const delay = (cell: { x: number; y: number }) =>
+  Math.round(Math.hypot(cell.x - gap.x, cell.y - gap.y) * 1.3);
+
+const caption = "Your team has the cells. We bring the one that's missing.";
+const invitedCaption = 'Invited. On our way…';
+const filledCaption = "HTTP 200 — gap filled. That's the job.";
+---
+
+<figure
+  class="comb"
+  data-comb
+  data-gap-x={gap.x}
+  data-gap-y={gap.y + 47}
+  data-mover-x={mover.x}
+  data-mover-y={mover.y + 47}
+  data-caption={caption}
+  data-filled-caption={filledCaption}
+  data-invited-caption={invitedCaption}
+>
+  <svg viewBox="60 -10 500 290" data-comb-svg>
+    <g
+      role="img"
+      aria-label="A honeycomb of nine skills with one empty cell marked 404 AI, and a honey cell marked 200 AI moving in to fill it"
+      font-family="'DM Mono', ui-monospace, monospace"
+      text-anchor="middle"
+    >
+      {cells.map((cell) => (
+        <g class="cell" style={`--d: ${delay(cell)}ms`}>
+          <polygon points={hex(cell.x, cell.y)} fill="rgba(255,228,176,0.03)" stroke="rgba(205,185,143,0.28)" stroke-width="1"></polygon>
+          <text x={cell.x} y={cell.y + 51} font-size="12" fill="#cdb98f">{cell.label}</text>
+        </g>
+      ))}
+    </g>
+    <!-- The 404 gap. Part of the drawing until the script makes it a button
+         that invites the 200 cell. -->
+    <g class="gap" aria-hidden="true" data-comb-gap font-family="'DM Mono', ui-monospace, monospace" text-anchor="middle">
+      <polygon class="gap-cell" points={hex(gap.x, gap.y)} fill="rgba(255,182,39,0.07)" stroke="#ffb627" stroke-width="1.5" stroke-dasharray="5 5"></polygon>
+      <text x={gap.x} y={gap.y + 48} font-size="17" font-weight="500" fill="#ffb627">404</text>
+      <text x={gap.x} y={gap.y + 66} font-size="11" fill="#cdb98f">AI</text>
+    </g>
+    <!-- The trail from the 200 cell to the gap; the script redraws it as the cell moves. -->
+    <g class="trail" aria-hidden="true">
+      <path d="M 470 86 C 440 128, 372 72, 322 112" fill="none" stroke="rgba(255,182,39,0.42)" stroke-width="1.5" stroke-dasharray="3 6" data-comb-trail></path>
+      <circle cx="322" cy="112" r="3" fill="#ffb627"></circle>
+    </g>
+    <!-- The 200 cell. Hidden from assistive tech until the script makes it a
+         button; without JavaScript the drawing's label above describes it. -->
+    <g
+      class="mover"
+      aria-hidden="true"
+      data-comb-mover
+      font-family="'DM Mono', ui-monospace, monospace"
+      text-anchor="middle"
+    >
+      <polygon class="mover-cell" points={hex(mover.x, mover.y)} fill="#ffb627"></polygon>
+      <text x={mover.x} y={mover.y + 49} font-size="17" font-weight="500" fill="#2a1c00">200</text>
+      <text x={mover.x} y={mover.y + 66} font-size="11" fill="#2a1c00" data-comb-label>AI</text>
+    </g>
+  </svg>
+  <figcaption class="mono">
+    <span aria-live="polite" data-comb-caption>{caption}</span>
+    <button class="comb-reset mono" type="button" hidden data-comb-reset>Try again <span aria-hidden="true">↺</span></button>
+  </figcaption>
+  <p class="comb-hint mono" aria-hidden="true">
+    <span class="hint-fine">Drag the 200 cell into the gap, or click the gap to invite it</span>
+    <span class="hint-coarse">Drag the 200 cell, or tap the gap to invite it</span>
+  </p>
+</figure>
+
+<script>
+  // Snap radius and tap threshold, in SVG user units.
+  const SNAP = 45;
+  const TAP = 6;
+  const TRAVEL_MS = 750;
+
+  const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Cubic Bézier point; used to fly the cell along a curve like the dotted trail.
+  const bezier = (t: number, a: number, b: number, c: number, d: number) => {
+    const u = 1 - t;
+    return u * u * u * a + 3 * u * u * t * b + 3 * u * t * t * c + t * t * t * d;
+  };
+  const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+
+  for (const figure of document.querySelectorAll<HTMLElement>('[data-comb]')) {
+    const svg = figure.querySelector<SVGSVGElement>('[data-comb-svg]');
+    const mover = figure.querySelector<SVGGElement>('[data-comb-mover]');
+    const label = figure.querySelector<SVGTextElement>('[data-comb-label]');
+    const caption = figure.querySelector<HTMLElement>('[data-comb-caption]');
+    const reset = figure.querySelector<HTMLButtonElement>('[data-comb-reset]');
+    const gapCell = figure.querySelector<SVGGElement>('[data-comb-gap]');
+    const trail = figure.querySelector<SVGPathElement>('[data-comb-trail]');
+    if (!svg || !mover || !label || !caption || !reset || !gapCell || !trail) continue;
+
+    const start = { x: Number(figure.dataset.moverX), y: Number(figure.dataset.moverY) };
+    const target = { x: Number(figure.dataset.gapX), y: Number(figure.dataset.gapY) };
+    const delta = { x: target.x - start.x, y: target.y - start.y };
+
+    // From here on the 200 cell is a control.
+    figure.classList.add('is-live');
+    mover.removeAttribute('aria-hidden');
+    mover.setAttribute('role', 'button');
+    mover.setAttribute('tabindex', '0');
+    mover.setAttribute('aria-label', 'Move the 200 AI cell into the empty 404 cell');
+    gapCell.removeAttribute('aria-hidden');
+    gapCell.setAttribute('role', 'button');
+    gapCell.setAttribute('tabindex', '0');
+    gapCell.setAttribute('aria-label', 'Invite the 200 AI cell into the empty 404 cell');
+
+    let offset = { x: 0, y: 0 };
+    let filled = false;
+    let drag: { pointer: number; from: { x: number; y: number }; origin: { x: number; y: number }; moved: number } | null = null;
+    let frame = 0;
+    let guard = 0;
+    let follow = 0;
+
+    // The trail runs from the edge of the 200 cell that faces the gap to the
+    // gap's corner, as a gentle S: its start moves with the cell, its end stays.
+    const END = { x: 322, y: 112 };
+    const drawTrail = (x: number, y: number) => {
+      const cx = start.x + x;
+      const cy = start.y + y;
+      const len = Math.hypot(END.x - cx, END.y - cy) || 1;
+      const ux = (END.x - cx) / len;
+      const uy = (END.y - cy) / len;
+      const sx = cx + ux * 44;
+      const sy = cy + uy * 44;
+      const bend = Math.min(30, len / 4);
+      const reach = Math.min(45, len / 3);
+      const c1 = `${(sx + ux * reach - uy * bend).toFixed(1)} ${(sy + uy * reach + ux * bend).toFixed(1)}`;
+      const c2 = `${(END.x - ux * reach + uy * bend).toFixed(1)} ${(END.y - uy * reach - ux * bend).toFixed(1)}`;
+      trail.setAttribute('d', `M ${sx.toFixed(1)} ${sy.toFixed(1)} C ${c1}, ${c2}, ${END.x} ${END.y}`);
+    };
+    // While the cell eases back by CSS, read where it is each frame.
+    const followTrail = () => {
+      cancelAnimationFrame(follow);
+      const until = performance.now() + 450;
+      const tick = () => {
+        const m = new DOMMatrixReadOnly(getComputedStyle(mover).transform);
+        drawTrail(m.e, m.f);
+        if (performance.now() < until) follow = requestAnimationFrame(tick);
+        else drawTrail(offset.x, offset.y);
+      };
+      follow = requestAnimationFrame(tick);
+    };
+
+    const toSvg = (event: PointerEvent) => {
+      const matrix = svg.getScreenCTM();
+      if (!matrix) return { x: 0, y: 0 };
+      const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
+      return { x: point.x, y: point.y };
+    };
+
+    // Keep the cell's centre inside the drawing, so it can never be dragged away.
+    const clamp = (x: number, y: number) => ({
+      x: Math.min(Math.max(x, 60 + 41 - start.x), 560 - 41 - start.x),
+      y: Math.min(Math.max(y, -10 + 47 - start.y), 280 - 47 - start.y),
+    });
+
+    drawTrail(0, 0);
+
+    const place = (x: number, y: number, eased = false) => {
+      const easing = eased && !reduced();
+      mover.classList.toggle('is-easing', easing);
+      mover.style.transform = `translate(${x}px, ${y}px)`;
+      offset = { x, y };
+      if (easing) followTrail();
+      else drawTrail(x, y);
+    };
+
+    const fill = () => {
+      filled = true;
+      cancelAnimationFrame(frame);
+      clearTimeout(guard);
+      place(delta.x, delta.y, true);
+      label.textContent = 'OK';
+      figure.classList.add('is-filled');
+      mover.setAttribute('aria-disabled', 'true');
+      mover.setAttribute('aria-label', 'The 200 cell fills the gap');
+      gapCell.setAttribute('aria-disabled', 'true');
+      caption.textContent = figure.dataset.filledCaption ?? '';
+      reset.hidden = false;
+      if (document.activeElement === mover) reset.focus();
+    };
+
+    const unfill = () => {
+      filled = false;
+      cancelAnimationFrame(frame);
+      clearTimeout(guard);
+      figure.classList.remove('is-filled');
+      label.textContent = 'AI';
+      mover.removeAttribute('aria-disabled');
+      gapCell.removeAttribute('aria-disabled');
+      mover.setAttribute('aria-label', 'Move the 200 AI cell into the empty 404 cell');
+      caption.textContent = figure.dataset.caption ?? '';
+      reset.hidden = true;
+      place(0, 0, true);
+      mover.focus();
+    };
+
+    // Fly from wherever the cell is now into the gap along a curve.
+    const travel = () => {
+      if (filled) return;
+      if (reduced()) return fill();
+      const from = { ...offset };
+      const c1 = { x: from.x - 30, y: from.y + 42 };
+      const c2 = { x: delta.x + 50, y: delta.y - 40 };
+      const began = performance.now();
+      mover.classList.remove('is-easing');
+      const step = (now: number) => {
+        const t = Math.min((now - began) / TRAVEL_MS, 1);
+        const k = easeInOut(t);
+        place(bezier(k, from.x, c1.x, c2.x, delta.x), bezier(k, from.y, c1.y, c2.y, delta.y));
+        if (t < 1) frame = requestAnimationFrame(step);
+        else fill();
+      };
+      frame = requestAnimationFrame(step);
+      // Frames pause in a hidden tab; the cell still lands.
+      guard = window.setTimeout(() => {
+        if (!filled) fill();
+      }, TRAVEL_MS + 400);
+    };
+
+    mover.addEventListener('pointerdown', (event) => {
+      if (filled || event.button > 0) return;
+      cancelAnimationFrame(frame);
+      clearTimeout(guard);
+      // Capture keeps the drag going when the pointer leaves the cell; it
+      // throws for a pointer that is not active, which must not stop the drag.
+      try {
+        mover.setPointerCapture(event.pointerId);
+      } catch {
+        /* drag still works while the pointer stays over the cell */
+      }
+      drag = { pointer: event.pointerId, from: toSvg(event), origin: { ...offset }, moved: 0 };
+      mover.classList.add('is-dragging');
+      mover.classList.remove('is-easing');
+      event.preventDefault();
+    });
+
+    mover.addEventListener('pointermove', (event) => {
+      if (!drag || event.pointerId !== drag.pointer) return;
+      const at = toSvg(event);
+      const dx = at.x - drag.from.x;
+      const dy = at.y - drag.from.y;
+      drag.moved = Math.max(drag.moved, Math.hypot(dx, dy));
+      const next = clamp(drag.origin.x + dx, drag.origin.y + dy);
+      place(next.x, next.y);
+    });
+
+    const release = (event: PointerEvent) => {
+      if (!drag || event.pointerId !== drag.pointer) return;
+      const { moved } = drag;
+      drag = null;
+      mover.classList.remove('is-dragging');
+      if (mover.hasPointerCapture(event.pointerId)) mover.releasePointerCapture(event.pointerId);
+      if (event.type === 'pointercancel') return place(0, 0, true);
+      if (moved < TAP) return travel();
+      const centre = { x: start.x + offset.x, y: start.y + offset.y };
+      if (Math.hypot(centre.x - target.x, centre.y - target.y) <= SNAP) fill();
+      else place(0, 0, true);
+    };
+    mover.addEventListener('pointerup', release);
+    mover.addEventListener('pointercancel', release);
+
+    mover.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        travel();
+      }
+    });
+
+    // Clicking the gap invites the 200 cell: it glides over by itself.
+    const invite = () => {
+      if (filled || drag) return;
+      caption.textContent = figure.dataset.invitedCaption ?? '';
+      travel();
+    };
+    gapCell.addEventListener('click', invite);
+    gapCell.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        invite();
+      }
+    });
+
+    reset.addEventListener('click', unfill);
+  }
+</script>
+
+<style>
+  .comb {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  svg {
+    width: 100%;
+    height: auto;
+  }
+
+  figcaption {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem 0.75rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.03em;
+    color: var(--text-dim);
+    text-align: center;
+  }
+
+  .comb-reset {
+    min-height: 32px;
+    padding: 0.2rem 0.7rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--bio);
+    border: 1px solid rgba(var(--bio-rgb), 0.35);
+    border-radius: 999px;
+    background: rgba(var(--bio-rgb), 0.06);
+    cursor: pointer;
+  }
+
+  .comb-reset:hover {
+    background: rgba(var(--bio-rgb), 0.14);
+  }
+
+  .comb-reset[hidden] {
+    display: none;
+  }
+
+  /* The hint only makes sense once the script has made the cell movable. */
+  .comb-hint {
+    display: none;
+    margin: -0.4rem 0 0;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--text-faint);
+    text-align: center;
+  }
+
+  .comb.is-live:not(.is-filled) .comb-hint {
+    display: block;
+  }
+
+  .hint-coarse {
+    display: none;
+  }
+
+  @media (pointer: coarse) {
+    .hint-fine {
+      display: none;
+    }
+
+    .hint-coarse {
+      display: inline;
+    }
+  }
+
+  /* The 200 cell as a control. */
+  .comb.is-live .mover {
+    cursor: grab;
+    touch-action: none;
+    outline: none;
+    transition: filter 0.3s var(--ease);
+  }
+
+  .comb.is-live .mover:hover {
+    filter: drop-shadow(0 0 8px var(--glow-bio));
+  }
+
+  .comb.is-live .mover:focus-visible .mover-cell {
+    stroke: var(--text);
+    stroke-width: 2.5;
+  }
+
+  /* The gap as a control: it invites the 200 cell. */
+  .comb.is-live .gap {
+    cursor: pointer;
+    outline: none;
+  }
+
+  .gap-cell {
+    transition: fill 0.25s var(--ease), stroke-width 0.25s var(--ease);
+  }
+
+  .comb.is-live:not(.is-filled) .gap:hover .gap-cell,
+  .comb.is-live:not(.is-filled) .gap:focus-visible .gap-cell {
+    fill: rgba(var(--bio-rgb), 0.18);
+    stroke-width: 2.5;
+  }
+
+  .comb.is-filled .gap {
+    pointer-events: none;
+  }
+
+  .mover.is-dragging {
+    cursor: grabbing;
+    filter: drop-shadow(0 0 12px var(--glow-bio));
+  }
+
+  .mover.is-easing {
+    transition: transform 0.35s var(--ease), filter 0.3s var(--ease);
+  }
+
+  /* Filled: the gap, its label and the trail fade out; the cell glows in
+     place; the skill cells light up in a wave from the centre and stay lit. */
+  .gap,
+  .trail {
+    transition: opacity 0.4s var(--ease);
+  }
+
+  .comb.is-filled .gap,
+  .comb.is-filled .trail {
+    opacity: 0;
+  }
+
+  .comb.is-filled .mover {
+    cursor: default;
+    filter: drop-shadow(0 0 14px var(--glow-bio));
+  }
+
+  .cell polygon,
+  .cell text {
+    transition: stroke 0.5s var(--ease), fill 0.5s var(--ease);
+  }
+
+  .comb.is-filled .cell polygon,
+  .comb.is-filled .cell text {
+    transition-delay: calc(var(--d) + 120ms);
+  }
+
+  .comb.is-filled .cell polygon {
+    stroke: var(--bio);
+    fill: rgba(var(--bio-rgb), 0.08);
+  }
+
+  .comb.is-filled .cell text {
+    fill: var(--text);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gap,
+    .trail,
+    .cell polygon,
+    .cell text,
+    .mover.is-easing {
+      transition: none;
+    }
+  }
+</style>

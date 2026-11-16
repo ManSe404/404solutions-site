@@ -1,0 +1,30 @@
+---
+// What we built, end to end: every delivered project as a honeycomb cell (Services.astro).
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+import Services from '../../components/Services.astro';
+import ClosingCta from '../../components/ClosingCta.astro';
+import Footer from '../../components/Footer.astro';
+import StickyCta from '../../components/StickyCta.astro';
+import ScoutChat from '../../components/ScoutChat.astro';
+import { company } from '../../data/company';
+import { projects } from '../../lib/projects';
+import { fields } from '../../lib/dashboard';
+
+const studies = (await projects()).map((project) => project.data);
+const names = fields(studies).map((field) => field.name);
+---
+
+<Base
+  title={`Services — ${company.name}`}
+  description={`What we built, end to end: ${studies.length} projects in ${names.join(', ')}, each with what it is, what it achieved, the role and the tools.`}
+>
+  <Header slot="header" />
+  <Services />
+  <ClosingCta />
+  <Fragment slot="footer">
+    <Footer />
+    <StickyCta />
+    <ScoutChat />
+  </Fragment>
+</Base>

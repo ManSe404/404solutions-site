@@ -1,0 +1,277 @@
+---
+// The home page's hub: five large honeycomb cells, each with a number from
+// the data, a title and one line, and each a link to its own page (Stefan,
+// 2026-11-16: the company in cells on the home page, every cell leading
+// to its page; the full content lives on those pages).
+//
+// Declared copy (ADR 0005) of the portfolio's honeycomb layout:
+// ManSe404/webpage@36bb05b website/src/components/hive/HiveDashboard.astro.
+// Kept: the grid (cells span two half-columns, rows overlap by a quarter hex,
+// placement per breakpoint through --rd/--cd/--rp/--cp) and the count-up.
+// Changed: company cells and data instead of the personal ones; larger cells
+// with a title and a description; no portrait, NodeField, ECG trace or panels:
+// a cell is a plain link to its page, and the Scout cell opens the question
+// bot. Every number is reduced from the site's data at build time
+// (src/lib/dashboard.ts).
+import { company } from '../../data/company';
+import { steps } from '../../data/services';
+import { mascot } from '../../data/faq';
+import { projects } from '../../lib/projects';
+import { place } from '../../lib/honeycomb';
+import { withBase } from '../../lib/url';
+
+const studies = (await projects()).map((project) => project.data);
+
+type Cell = {
+  id: string;
+  title: string;
+  description: string;
+  href: string;
+  tone: 'ai' | 'bio';
+  value?: number;
+  text?: string;
+  /** Opens Scout; the href is the no-JS fallback. */
+  scout?: boolean;
+};
+
+const cells: Cell[] = [
+  { id: 'services', title: 'Services', value: studies.length, description: 'Projects we built, end to end', href: withBase('/services/'), tone: 'ai' },
+  { id: 'process', title: 'How we engage', value: steps.length, description: 'Discover, build, ship, run', href: withBase('/how-we-work/'), tone: 'bio' },
+  { id: 'about', title: 'About', text: String(company.since.year), description: 'Who we are, who leads the work', href: withBase('/about/'), tone: 'bio' },
+  { id: 'contact', title: 'Contact', text: 'Hi', description: "Tell us what's missing", href: withBase('/contact/'), tone: 'bio' },
+  { id: 'scout', title: mascot.name, text: 'Ask', description: 'Questions, answered from a fixed list', href: withBase('/contact/'), tone: 'ai', scout: true },
+];
+---
+
+<section class="hub section wrap" id="explore" aria-labelledby="hub-title" data-hub>
+  <div class="section-head hub-head">
+    <p class="eyebrow">Explore</p>
+    <h2 id="hub-title">Find the cell you're missing.</h2>
+    <p>What we built, how we work, who we are. Each cell opens its own page.</p>
+  </div>
+
+  <ul class="hive" aria-label="Explore 404 Solutions">
+    {cells.map((cell, i) => {
+      const d = place(i, 3);
+      const p = place(i, 2);
+      return (
+        <li class={`cell tone-${cell.tone}`} style={`--rd:${d.row};--cd:${d.col};--rp:${p.row};--cp:${p.col}`}>
+          <a
+            class="hex"
+            href={cell.href}
+            data-cell={cell.id}
+            data-scout-open={cell.scout ? '' : undefined}
+            aria-controls={cell.scout ? 'scout-panel' : undefined}
+          >
+            <span class="hex-value mono">
+              {cell.text ?? <span data-count={cell.value}>{cell.value}</span>}
+            </span>
+            <span class="hex-title">{cell.title}</span>
+            <span class="hex-text">{cell.description}</span>
+          </a>
+        </li>
+      );
+    })}
+  </ul>
+</section>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-hub]');
+  if (root) {
+    // The Scout cell opens the bot (ScoutChat.astro handles [data-scout-open]);
+    // with JavaScript it must not also follow its fallback link.
+    for (const cell of root.querySelectorAll<HTMLAnchorElement>('[data-scout-open]')) {
+      cell.setAttribute('role', 'button');
+      cell.addEventListener('click', (event) => event.preventDefault());
+      cell.addEventListener('keydown', (event) => {
+        if (event.key === ' ') {
+          event.preventDefault();
+          cell.click();
+        }
+      });
+    }
+
+    // The real numbers are in the HTML; with motion allowed they count up once.
+    const counters = [...root.querySelectorAll<HTMLElement>('[data-count]')];
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && counters.length && 'IntersectionObserver' in window) {
+      const run = (el: HTMLElement) => {
+        const target = Number(el.dataset.count ?? 0);
+        const start = performance.now();
+        const tick = (t: number) => {
+          const k = Math.min((t - start) / 1200, 1);
+          el.textContent = String(Math.round(target * (1 - Math.pow(2, -10 * k))));
+          if (k < 1) requestAnimationFrame(tick);
+          else el.textContent = String(target);
+        };
+        requestAnimationFrame(tick);
+      };
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              run(entry.target as HTMLElement);
+              io.unobserve(entry.target);
+            }
+          }
+        },
+        { threshold: 0.6 },
+      );
+      counters.forEach((el) => io.observe(el));
+    }
+  }
+</script>
+
+<style>
+  .hub-head {
+    margin-inline: auto;
+    text-align: center;
+    align-items: center;
+  }
+
+  .hub-head .eyebrow::after {
+    content: '';
+    flex: 0 0 1.75rem;
+    height: 1px;
+    background: linear-gradient(270deg, var(--bio), transparent);
+  }
+
+  /* Honeycomb: cells span two half-columns, rows overlap by a quarter hex.
+     Three per row on desktop, as wide as the column allows up to 212 px. */
+  .hive {
+    --w: min(212px, calc((100vw - 2 * var(--gutter)) / 3.5));
+    --h: calc(var(--w) * 1.1547);
+    margin: 0 auto;
+    padding: 0;
+    display: grid;
+    justify-content: center;
+    grid-template-columns: repeat(7, calc(var(--w) / 2));
+    grid-template-rows: calc(var(--h) * 0.75) var(--h);
+  }
+
+  .cell {
+    grid-column: var(--cd) / span 2;
+    grid-row: var(--rd);
+    height: var(--h);
+  }
+
+  .hex {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    width: 100%;
+    height: 100%;
+    padding: 0 calc(var(--w) * 0.12);
+    text-align: center;
+    clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+    background: var(--border-strong);
+    transform: scale(0.96);
+    transition: background 0.25s var(--ease), transform 0.25s var(--ease);
+  }
+
+  .hex::before {
+    content: '';
+    position: absolute;
+    inset: 1.5px;
+    z-index: 0;
+    clip-path: inherit;
+    background: var(--bg-raised);
+    transition: background 0.25s var(--ease);
+  }
+
+  .hex > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .hex-value {
+    font-size: calc(var(--w) * 0.16);
+    line-height: 1;
+    font-weight: 500;
+  }
+
+  .tone-ai .hex-value {
+    color: var(--ai);
+  }
+
+  .tone-bio .hex-value {
+    color: var(--bio);
+  }
+
+  .hex-title {
+    font-size: clamp(0.78rem, calc(var(--w) * 0.068), 0.98rem);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    line-height: 1.2;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .hex-text {
+    max-width: 15ch;
+    font-size: clamp(0.72rem, calc(var(--w) * 0.062), 0.88rem);
+    line-height: 1.3;
+    color: var(--text-dim);
+  }
+
+  .hex:hover,
+  .hex:focus-visible {
+    background: var(--bio);
+    transform: scale(1);
+  }
+
+  .hex:hover::before,
+  .hex:focus-visible::before {
+    background: #241d12;
+  }
+
+  .hex:focus-visible {
+    outline: none;
+  }
+
+  .cell:has(.hex:hover),
+  .cell:has(.hex:focus-visible) {
+    filter: drop-shadow(0 0 14px var(--glow-bio));
+  }
+
+  /* Phone: two per row, as wide as the screen allows. */
+  @media (max-width: 640px) {
+    .hive {
+      --w: min(190px, calc((100vw - 2 * var(--gutter)) / 2.5));
+      grid-template-columns: repeat(5, calc(var(--w) / 2));
+      grid-template-rows: repeat(2, calc(var(--h) * 0.75)) var(--h);
+    }
+
+    .cell {
+      grid-column: var(--cp) / span 2;
+      grid-row: var(--rp);
+    }
+
+    .hex {
+      gap: 0.2rem;
+      padding: 0 calc(var(--w) * 0.1);
+    }
+
+    .hex-value {
+      font-size: 1.45rem;
+    }
+
+    .hex-title {
+      font-size: 0.7rem;
+    }
+
+    .hex-text {
+      font-size: 0.68rem;
+      line-height: 1.25;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hex,
+    .hex::before {
+      transition: none;
+    }
+  }
+</style>

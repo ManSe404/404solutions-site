@@ -1,0 +1,23 @@
+---
+// Contact: the contact box as the page, what to send, and Scout for questions.
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Contact from '../components/Contact.astro';
+import Footer from '../components/Footer.astro';
+import StickyCta from '../components/StickyCta.astro';
+import ScoutChat from '../components/ScoutChat.astro';
+import { company } from '../data/company';
+---
+
+<Base
+  title={`Contact — ${company.name}`}
+  description={`Start a project with ${company.name}: a few lines on the problem, what you already have and the deadline.`}
+>
+  <Header slot="header" />
+  <Contact />
+  <Fragment slot="footer">
+    <Footer />
+    <StickyCta />
+    <ScoutChat />
+  </Fragment>
+</Base>

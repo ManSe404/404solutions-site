@@ -1,0 +1,25 @@
+---
+// How we engage: the four steps of an engagement, as their own page.
+import Base from '../../layouts/Base.astro';
+import Header from '../../components/Header.astro';
+import Process from '../../components/Process.astro';
+import ClosingCta from '../../components/ClosingCta.astro';
+import Footer from '../../components/Footer.astro';
+import StickyCta from '../../components/StickyCta.astro';
+import ScoutChat from '../../components/ScoutChat.astro';
+import { company } from '../../data/company';
+---
+
+<Base
+  title={`How we engage — ${company.name}`}
+  description="Discover, build, ship, run: from the problem statement to a system running in your cloud, and kept running after launch."
+>
+  <Header slot="header" />
+  <Process page />
+  <ClosingCta />
+  <Fragment slot="footer">
+    <Footer />
+    <StickyCta />
+    <ScoutChat />
+  </Fragment>
+</Base>

@@ -1,0 +1,59 @@
+---
+// The home page's last section: one line and the way to the contact page.
+import { withBase } from '../lib/url';
+---
+
+<section class="section wrap closing" aria-labelledby="closing-title">
+  <div class="closing-band">
+    <div class="closing-copy">
+      <h2 id="closing-title">Tell us what's missing.</h2>
+      <p>A few lines on the problem, what you already have and the deadline are enough to start. Or invite us over to look.</p>
+    </div>
+    <a class="btn btn-solid closing-btn" href={withBase('/contact/')}>Start a project <span aria-hidden="true">→</span></a>
+  </div>
+</section>
+
+<style>
+  .closing {
+    padding-bottom: var(--section-y);
+  }
+
+  .closing-band {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem 2rem;
+    padding: clamp(1.5rem, 4vw, 2.75rem);
+    border: 1px solid rgba(var(--bio-rgb), 0.42);
+    border-radius: var(--radius);
+    background: rgba(var(--bio-rgb), 0.05);
+  }
+
+  .closing-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    max-width: 52ch;
+  }
+
+  h2 {
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  .closing-copy p {
+    color: var(--text-dim);
+  }
+
+  .closing-btn {
+    min-height: 50px;
+  }
+
+  @media (max-width: 640px) {
+    .closing-btn {
+      width: 100%;
+    }
+  }
+</style>

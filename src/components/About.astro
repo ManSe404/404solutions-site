@@ -1,0 +1,171 @@
+---
+import { company } from '../data/company';
+import { withBase } from '../lib/url';
+
+const { founder, links } = company;
+---
+
+<section id="about" class="section wrap" aria-labelledby="about-title">
+  <div class="about">
+    <div class="portrait">
+      <img
+        src={withBase(founder.portrait)}
+        alt={`Portrait of ${founder.name}`}
+        width="600"
+        height="900"
+        loading="lazy"
+        decoding="async"
+      />
+    </div>
+    <div class="about-head">
+      <p class="eyebrow">Who you work with</p>
+      <h2 id="about-title">{founder.name}</h2>
+    </div>
+    <div class="about-body">
+      <p class="bio">{founder.bio}</p>
+      <ul class="founder-stats">
+        {founder.stats.map((stat) => (
+          <li>
+            <span class="mono founder-stat-value">{stat.value}</span>
+            <span class="founder-stat-label">{stat.label}</span>
+          </li>
+        ))}
+      </ul>
+      <div class="about-actions">
+        <a class="btn btn-ghost" href={links.linkedin}>LinkedIn <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Desktop: the arched portrait on the left, heading and text beside it.
+     Phone: a small portrait next to the heading, the text below both. */
+  .about {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    grid-template-areas:
+      'photo head'
+      'photo body';
+    align-content: center;
+    align-items: start;
+    column-gap: clamp(2rem, 5vw, 4rem);
+    row-gap: 1rem;
+    max-width: 960px;
+    margin-inline: auto;
+  }
+
+  .portrait {
+    grid-area: photo;
+    align-self: center;
+    aspect-ratio: 4 / 5;
+    border-radius: 140px 140px var(--radius) var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-raised);
+  }
+
+  .portrait img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 18%;
+    filter: grayscale(0.55) contrast(1.06);
+  }
+
+  .about-head {
+    grid-area: head;
+    align-self: end;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  .about-body {
+    grid-area: body;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .bio {
+    max-width: 58ch;
+    font-size: 1.06rem;
+    color: var(--text-dim);
+  }
+
+  .founder-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+  }
+
+  .founder-stats li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .founder-stat-value {
+    font-size: 1.75rem;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--bio);
+  }
+
+  .founder-stat-label {
+    font-size: 0.85rem;
+    color: var(--text-faint);
+  }
+
+  .about-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+  }
+
+  @media (max-width: 760px) {
+    .about {
+      grid-template-columns: 96px minmax(0, 1fr);
+      grid-template-areas:
+        'photo head'
+        'body  body';
+      column-gap: 1.1rem;
+      align-items: center;
+    }
+
+    .portrait {
+      height: 120px;
+      aspect-ratio: auto;
+      border-radius: 48px 48px 10px 10px;
+    }
+
+    .about-head {
+      align-self: center;
+      gap: 0.4rem;
+    }
+
+    .about-head h2 {
+      font-size: 1.65rem;
+    }
+
+    .bio {
+      font-size: 0.97rem;
+    }
+
+    /* Three equal columns, labels wrap, so the row never breaks into two. */
+    .founder-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .founder-stat-value {
+      font-size: 1.4rem;
+    }
+
+    .founder-stat-label {
+      font-size: 0.8rem;
+    }
+  }
+</style>

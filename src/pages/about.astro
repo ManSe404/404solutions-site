@@ -1,0 +1,56 @@
+---
+// About 404 Solutions: who we are in one paragraph, and the founder. No
+// partner or client is named (ADR 0008).
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import About from '../components/About.astro';
+import Footer from '../components/Footer.astro';
+import StickyCta from '../components/StickyCta.astro';
+import ScoutChat from '../components/ScoutChat.astro';
+import { company } from '../data/company';
+---
+
+<Base
+  title={`About — ${company.name}`}
+  description={`About ${company.name}: production AI and software, and who leads the work.`}
+>
+  <Header slot="header" />
+  <section class="wrap about-intro" aria-labelledby="about-intro-title">
+    <p class="eyebrow">About</p>
+    <h1 id="about-intro-title">About {company.name}</h1>
+    <p class="about-lede">{company.description}</p>
+  </section>
+  <About />
+  <div class="about-end" aria-hidden="true"></div>
+  <Fragment slot="footer">
+    <Footer />
+    <StickyCta />
+    <ScoutChat />
+  </Fragment>
+</Base>
+
+<style>
+  .about-intro {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding-top: clamp(2.5rem, 7vh, 4.5rem);
+  }
+
+  h1 {
+    font-size: clamp(2.3rem, 5vw, 3.6rem);
+    font-weight: 700;
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+  }
+
+  .about-lede {
+    max-width: 62ch;
+    font-size: 1.08rem;
+    color: var(--text-dim);
+  }
+
+  .about-end {
+    height: var(--section-y);
+  }
+</style>

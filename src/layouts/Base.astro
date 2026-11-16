@@ -1,0 +1,104 @@
+---
+import '../styles/global.css';
+import { company } from '../data/company';
+import { withBase } from '../lib/url';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = `${company.name} — production AI and software`,
+  description = company.description,
+} = Astro.props;
+
+// Directory build format: every page is served at a path ending in "/".
+const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.url.pathname}/`;
+const canonical = new URL(path, Astro.site).href;
+const shareImage = new URL(withBase('/images/og.png'), Astro.site).href;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#13100a" />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={shareImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <script
+      is:inline
+      type="application/ld+json"
+      set:html={JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: company.name,
+        description: company.description,
+        founder: { '@type': 'Person', name: company.founder.name, sameAs: [company.links.linkedin] },
+        address: { '@type': 'PostalAddress', addressLocality: 'Belgrade', addressCountry: 'RS' },
+        ...(company.email ? { email: `mailto:${company.email}` } : {}),
+        sameAs: [company.links.linkedin],
+      })}
+    />
+  </head>
+
+  <body>
+    <div class="page" id="top">
+      <div class="backdrop" aria-hidden="true"></div>
+      <a class="skip-link" href="#main">Skip to content</a>
+      <slot name="header" />
+      <main id="main">
+        <slot />
+      </main>
+      <slot name="footer" />
+    </div>
+  </body>
+</html>
+
+<style>
+  .page {
+    position: relative;
+  }
+
+  main {
+    position: relative;
+    z-index: 1;
+  }
+
+  .skip-link {
+    position: absolute;
+    left: 1rem;
+    top: -4rem;
+    z-index: 100;
+    padding: 0.6rem 1rem;
+    border-radius: var(--radius-sm);
+    background: var(--bio);
+    color: var(--on-accent);
+    font-family: var(--font-mono);
+    font-size: 0.83rem;
+  }
+
+  .skip-link:focus {
+    top: 1rem;
+  }
+</style>

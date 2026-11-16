@@ -1,0 +1,35 @@
+---
+// One project's short description: five lines (what it is, what it achieved,
+// the role, the tools, when). Declared copy of ManSe404/webpage@1adafb1
+// website/src/components/hive/ProjectDetails.astro (ADR 0007). Changed: no
+// company / client line, because no company or client is named on this site
+// (ADR 0008); the period gets its own line instead; no outside link.
+import type { Project } from '../../lib/projects';
+import { projectResult } from '../../lib/dashboard';
+
+interface Props {
+  project: Project;
+}
+
+const { project: p } = Astro.props;
+const result = projectResult(p.data);
+const role = p.data.metrics.find((m) => m.label === 'Role')?.value;
+---
+
+<h3 class="pop-title"><span class="pop-field">{p.data.category}:</span>{' '}{p.data.title}</h3>
+<ul class="pop-lines">
+  <li><strong>Project description:</strong>{' '}{p.data.summary}</li>
+  {result && <li><strong>Achieved result:</strong>{' '}{result}</li>}
+  {role && <li><strong>Role &amp; responsibilities:</strong>{' '}{role}</li>}
+  <li><strong>Tech stack:</strong>{' '}{p.data.stack.join(', ')}</li>
+  {p.data.period && <li><strong>Period:</strong>{' '}{p.data.period}</li>}
+</ul>
+
+<style>
+  .pop-title { margin: 0 0 1rem; padding-right: 5.5rem; font-size: clamp(1.2rem, 2.2vw, 1.5rem); line-height: 1.25; }
+  .pop-field { color: var(--bio); }
+  .pop-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; max-width: 62rem; }
+  .pop-lines li { position: relative; padding-left: 1.5rem; color: var(--text-dim); line-height: 1.55; }
+  .pop-lines li::before { content: '→'; position: absolute; left: 0; color: var(--bio); }
+  .pop-lines strong { color: var(--text); font-weight: 600; }
+</style>
