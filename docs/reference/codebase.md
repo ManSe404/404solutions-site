@@ -2,7 +2,7 @@
 
 | Path | What it holds |
 |---|---|
-| `astro.config.mjs` | Astro settings: `site` and `base` for the GitHub Pages project URL, directory build format |
+| `astro.config.mjs` | Astro settings: `site` and `base` for the GitHub Pages project URL, directory build format, HTML-aware whitespace compression (`compressHTML: true`) |
 | `src/content.config.ts` | The `projects` content collection and its schema (`source`, `title`, `category`, `summary`, `order`, `period`, `impact`, `stack`, `metrics`); no company or client field (ADR 0008) |
 | `src/content/projects/` | One frontmatter-only file per delivered project, a declared copy from the portfolio (ADR 0006); each names its source commit |
 | `scripts/sync-projects.mjs` | Copies the frontmatter of the portfolio projects whose `org` is listed in `PROJECT_ORGS` (a setting kept outside the repository), drops `org` and `client`, applies the edits file: `PROJECT_ORGS='<org>,<org>' node scripts/sync-projects.mjs <portfolio-checkout> [git-ref]` |
@@ -45,5 +45,5 @@
 | `tests/no-personal-links.test.ts` | Fails on any link to the portfolio or the personal GitHub in `src/` or `public/` |
 | `public/` | `favicon.svg`, `images/stefan-seman.jpg`, `images/og.png` (share image) |
 | `scripts/check-links.mjs` | `npm run check:links`: every internal link, file and #anchor in `dist/` resolves; offline |
-| `.github/dependabot.yml` | Weekly grouped update PRs for npm and the GitHub Actions |
+| `.github/dependabot.yml` | Weekly grouped update PRs for npm and the GitHub Actions; major TypeScript and `@types/node` bumps skipped (reasons in the file) |
 | `.github/workflows/site.yml` | Check, test, build and link check on every pull request (job `build`, required on `main`) and on `main`; deploy to GitHub Pages from `main` |

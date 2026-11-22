@@ -15,6 +15,8 @@ The site is live at <https://manse404.github.io/404solutions-site/>. What is ope
 
 Done:
 
+- Astro 7 (2026-11-22): from Astro 5.18, with TypeScript 6 (the newest `@astrojs/check` accepts); the built pages
+  look and behave the same.
 - Contact address (2026-11-16): the founder's Gmail until the domain exists (item 4).
 - Share image (2026-11-16): `public/images/og.png`, 1200 × 630, with Scout.
 - Case studies on the company site, no links to personal pages (2026-11-16): `/work/` and `/work/<slug>/`,

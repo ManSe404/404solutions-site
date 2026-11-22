@@ -9,6 +9,10 @@ export default defineConfig({
   site: 'https://manse404.github.io',
   base: '/404solutions-site',
   trailingSlash: 'ignore',
+  // Astro 7 strips whitespace by JSX rules by default, which can drop the
+  // space between inline elements written on separate lines. `true` keeps the
+  // HTML-aware compression the pages were written and checked against.
+  compressHTML: true,
   build: {
     format: 'directory',
   },

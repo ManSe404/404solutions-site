@@ -144,8 +144,9 @@ const initial = nextSuggestions(faq, defaultSuggestions, null);
       showSuggestions(nextSuggestions(faq, defaultSuggestions, entry).map((next) => next.question));
     };
 
+    // `hidden` can also be 'until-found', which is hidden too: any value but false opens the panel.
     openers.forEach((button) =>
-      button.addEventListener('click', () => setOpen(panel.hidden, button)),
+      button.addEventListener('click', () => setOpen(panel.hidden !== false, button)),
     );
     closer?.addEventListener('click', () => setOpen(false));
 
