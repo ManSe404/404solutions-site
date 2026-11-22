@@ -23,7 +23,7 @@ fixed list, in the browser ([ADR 0003](docs/adr/0003-scout-answers-from-a-fixed-
 
 ## Run it
 
-Needs Node.js 24 (CI uses 24; 22.18 or newer works, the tests rely on Node's built-in TypeScript type stripping).
+Needs Node.js 24 (CI uses 24; Astro 7 needs 22.23.4 or newer, and the tests rely on Node's built-in TypeScript type stripping).
 
 ```bash
 npm install

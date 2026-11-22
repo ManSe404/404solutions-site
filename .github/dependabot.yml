@@ -10,6 +10,14 @@ updates:
     groups:
       npm:
         patterns: ["*"]
+    ignore:
+      # @astrojs/check accepts TypeScript 5 and 6 only; a TypeScript 7 bump
+      # fails `npm ci` and with it the whole group. Lift when it supports 7.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      # The Node types follow the Node the workflow runs (24), not the newest.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
